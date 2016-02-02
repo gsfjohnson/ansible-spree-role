@@ -1,0 +1,40 @@
+---
+
+- name: gem no document
+  copy: content="gem: --no-document" dest=/etc/gemrc
+
+- name: install rails
+  gem: name=rails version={{spree_rails_version}} state=present
+
+- name: install bundler
+  gem: name=bundler state=present
+
+- name: install spree_cmd
+  gem: name=spree_cmd state=present
+
+- name: install rails
+  command: "rails _{{spree_rails_version}}_ new {{spree_store_name}}"
+  args:
+    chdir: /tmp
+    creates: "{{spree_store_name}}"
+
+- name: add spree to Gemfile
+  lineinfile: dest=/tmp/{{spree_store_name}}/Gemfile regexp='^gem \'spree' line='gem \'spree\', \'3.0.5\''
+
+- name: add spree_gateway to Gemfile
+  lineinfile: dest=/tmp/{{spree_store_name}}/Gemfile regexp='^gem \'spree_gateway' line="gem 'spree_gateway', github: 'spree/spree_gateway', branch: '3-0-stable'"
+
+- name: add spree_auth_devise to Gemfile
+  lineinfile: dest=/tmp/{{spree_store_name}}/Gemfile regexp='^gem \'spree' line="gem 'spree_auth_devise', github: 'spree/spree_auth_devise', branch: '3-0-stable'"
+
+- name: update bundle
+  command: bundle update
+  args:
+    chdir: /tmp/{{spree_store_name}}
+
+- name: generate devise secret key
+  command: openssl rand -hex 50
+  register: _openssl
+
+- debug: var=_openssl
+
